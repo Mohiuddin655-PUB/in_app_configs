@@ -2,12 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:in_app_remote/remote.dart';
 import 'package:object_finder/object_finder.dart';
 
-import 'delegate.dart';
-
+/// Default configuration constants
 const _kApplication = "application";
 const _kDailyNotifications = "daily_notifications";
 const _kWeeklyNotifications = "weekly_notifications";
@@ -15,6 +13,7 @@ const _kThemes = "themes";
 const _kSecrets = "secrets";
 const kDefaultConfigName = "configs";
 
+/// Default configuration paths used in initialization
 const kDefaultConfigPaths = {
   _kApplication,
   _kDailyNotifications,
@@ -23,6 +22,7 @@ const kDefaultConfigPaths = {
   _kThemes,
 };
 
+/// Represents the current platform where the app runs.
 enum PlatformType {
   android,
   ios,
@@ -35,13 +35,38 @@ enum PlatformType {
   system,
 }
 
-enum EnvironmentType { live, test, system }
+/// Represents the current environment of the app.
+enum EnvironmentType {
+  live,
+  test,
+  system,
+}
 
+/// Base delegate for handling remote configurations.
+abstract class ConfigsDelegate extends RemoteDelegate {}
+
+/// A configuration manager that supports
+/// - platform-specific values (Android, iOS, Web, etc.)
+/// - environment-based overrides (test, live)
+/// - remote synchronization and reactive updates.
+///
+/// Example:
+/// ```dart
+/// await Configs.init(environment: EnvironmentType.test);
+///
+/// final apiUrl = Configs.get<String>("api/url");
+///
+/// ConfigBuilder<String>(
+///   id: "theme_color",
+///   builder: (context, color) => Text("Color: $color"),
+/// );
+/// ```
 class Configs extends Remote<ConfigsDelegate> {
   Configs._();
 
   static Configs? _i;
 
+  /// The singleton instance of [Configs].
   static Configs get i => _i ??= Configs._();
 
   // ---------------------------------------------------------------------------
@@ -52,6 +77,12 @@ class Configs extends Remote<ConfigsDelegate> {
   EnvironmentType? _environment;
   PlatformType? _platform;
 
+  /// Returns the currently active environment type.
+  ///
+  /// Defaults to:
+  /// - [EnvironmentType.test] in debug mode
+  /// - [EnvironmentType.live] in release mode
+  /// - [EnvironmentType.system] otherwise
   EnvironmentType get environment {
     if (i._environment != null && i._environment != EnvironmentType.system) {
       return i._environment!;
@@ -61,6 +92,7 @@ class Configs extends Remote<ConfigsDelegate> {
     return EnvironmentType.system;
   }
 
+  /// Returns the detected or manually set [PlatformType].
   PlatformType get platform {
     if (i._platform != null && i._platform != PlatformType.system) {
       return i._platform!;
@@ -76,16 +108,28 @@ class Configs extends Remote<ConfigsDelegate> {
     return PlatformType.system;
   }
 
+  /// Updates the current environment and notifies listeners.
   set environment(EnvironmentType type) {
     i._environment = type;
     i.notifyListeners();
   }
 
+  /// Updates the current platform and notifies listeners.
   set platform(PlatformType type) {
     i._platform = type;
     i.notifyListeners();
   }
 
+  /// Initializes the configuration system.
+  ///
+  /// Example:
+  /// ```dart
+  /// await Configs.init(
+  ///   environment: EnvironmentType.live,
+  ///   platform: PlatformType.ios,
+  ///   onReady: () => debugPrint("Configs ready"),
+  /// );
+  /// ```
   static Future<void> init({
     String? name,
     ConfigsDelegate? delegate,
@@ -118,19 +162,20 @@ class Configs extends Remote<ConfigsDelegate> {
   }
 
   // ---------------------------------------------------------------------------
-  // FINAL PART
+  // INTERNAL UTILITIES
   // ---------------------------------------------------------------------------
 
+  /// Splits a key path into (path, key) tuple.
   (String, String) _keys(String key) {
     if (!key.contains("/")) return (_defaultPath, key);
     List<String> keys = key.split("/");
     if (keys.length < 2) return (_defaultPath, key);
-    final k = keys.last;
-    keys.removeLast();
+    final k = keys.removeLast();
     final p = keys.join("/");
     return (p, k);
   }
 
+  /// Combines base environment data with overrides for the current environment.
   Map _env(Map data, EnvironmentType? environment) {
     Map value = {};
     final x = data["default"];
@@ -142,6 +187,7 @@ class Configs extends Remote<ConfigsDelegate> {
     return value;
   }
 
+  /// Resolves platform-specific overrides from a data map.
   Object? _pla(Map data, Object? base, PlatformType? platform) {
     platform ??= this.platform;
     if (platform == PlatformType.system) platform = this.platform;
@@ -151,6 +197,7 @@ class Configs extends Remote<ConfigsDelegate> {
     return value ?? base;
   }
 
+  /// Selects a configuration value by key with optional path, environment, and platform.
   Object? _select(
     String key, {
     String? path,
@@ -169,6 +216,7 @@ class Configs extends Remote<ConfigsDelegate> {
     return y;
   }
 
+  /// Finds all configuration values for a given section name.
   Object? _find(
     String name, {
     EnvironmentType? environment,
@@ -180,6 +228,11 @@ class Configs extends Remote<ConfigsDelegate> {
     return env;
   }
 
+  // ---------------------------------------------------------------------------
+  // PUBLIC GETTERS
+  // ---------------------------------------------------------------------------
+
+  /// Loads an entire section of data and applies an optional parser.
   static T? load<T extends Object?>({
     String? name,
     T? defaultValue,
@@ -204,6 +257,9 @@ class Configs extends Remote<ConfigsDelegate> {
     }
   }
 
+  /// Retrieves a configuration value by key.
+  ///
+  /// Throws [UnimplementedError] if not found.
   static T get<T extends Object?>(
     String key, {
     String? path,
@@ -226,6 +282,7 @@ class Configs extends Remote<ConfigsDelegate> {
     throw UnimplementedError("$T didn't get from this ${i.name}");
   }
 
+  /// Retrieves a configuration value safely (nullable).
   static T? getOrNull<T extends Object?>(
     String key, {
     String? path,
@@ -252,6 +309,7 @@ class Configs extends Remote<ConfigsDelegate> {
     }
   }
 
+  /// Retrieves a list of configuration values by key.
   static List<T> gets<T extends Object?>(
     String key, {
     String? path,
@@ -274,6 +332,7 @@ class Configs extends Remote<ConfigsDelegate> {
     throw UnimplementedError("${List<T>} didn't get from this ${i.name}");
   }
 
+  /// Retrieves a nullable list of configuration values.
   static List<T>? getsOrNull<T extends Object?>(
     String key, {
     String? path,
@@ -300,70 +359,5 @@ class Configs extends Remote<ConfigsDelegate> {
       i.log(msg);
       return defaultValue;
     }
-  }
-}
-
-class ConfigBuilder<T extends Object?> extends StatefulWidget {
-  final String id;
-  final String? name;
-  final T? initial;
-  final PlatformType? platform;
-  final EnvironmentType? environment;
-  final T? Function(Object?)? parser;
-  final T? Function(T)? modifier;
-  final Widget Function(BuildContext context, T? value) builder;
-
-  const ConfigBuilder({
-    super.key,
-    required this.id,
-    this.name,
-    required this.builder,
-    this.initial,
-    this.platform,
-    this.environment,
-    this.parser,
-    this.modifier,
-  });
-
-  @override
-  State<ConfigBuilder<T>> createState() => _ConfigBuilderState<T>();
-}
-
-class _ConfigBuilderState<T extends Object?> extends State<ConfigBuilder<T>> {
-  T? value;
-
-  T? get _fetch {
-    return Configs.getOrNull(
-      widget.id,
-      path: widget.name,
-      platform: widget.platform,
-      environment: widget.environment,
-      parser: widget.parser,
-      modifier: widget.modifier,
-    );
-  }
-
-  void _listen() {
-    T? newValue = _fetch;
-    if (value == newValue) return;
-    setState(() => value = newValue);
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    value = _fetch;
-    Configs.i.addListener(_listen);
-  }
-
-  @override
-  void dispose() {
-    Configs.i.removeListener(_listen);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return widget.builder(context, value ?? widget.initial);
   }
 }

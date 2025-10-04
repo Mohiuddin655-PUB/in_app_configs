@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  data_type_detector:
+  in_app_configs:
     path: ../
 
 
@@ -21,4 +21,8 @@ dev_dependencies:
 flutter:
 
   uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/configs/
 

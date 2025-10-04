@@ -1,0 +1,18 @@
+{
+  "default": {
+    "api_url": "https://api.example.com",
+    "theme_color": "blue",
+    "welcome_text": {
+      "android": "Welcome Android!",
+      "ios": "Welcome iOS!",
+      "web": "Welcome Web!"
+    }
+  },
+  "test": {
+    "api_url": "https://staging.example.com",
+    "theme_color": "orange"
+  },
+  "live": {
+    "api_url": "https://live.example.com"
+  }
+}
