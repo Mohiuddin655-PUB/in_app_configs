@@ -1,3 +1,8 @@
+## 1.0.1
+
+- Lazy mode support
+- Log throw support
+
 ## 1.0.0
 
 - 🧩 Environment-based configuration — supports live, test, and system modes

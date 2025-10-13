@@ -1,6 +1,6 @@
 name: in_app_configs
 description: "Configs is a powerful environment-aware configuration manager for Flutter apps."
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/Mohiuddin655-PUB/in_app_configs
 
 environment:
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  in_app_remote: ^1.0.0
+  in_app_remote: ^1.0.1
   object_finder: ^1.0.0
 
 dev_dependencies:
