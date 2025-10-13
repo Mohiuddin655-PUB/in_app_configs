@@ -1,3 +1,7 @@
+## 1.0.2
+
+- Configs improved
+
 ## 1.0.1
 
 - Lazy mode support

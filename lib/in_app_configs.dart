@@ -1,2 +1,2 @@
-export 'src/builder.dart';
-export 'src/configs.dart';
+export 'builder.dart';
+export 'configs.dart';
